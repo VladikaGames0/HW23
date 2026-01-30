@@ -1,0 +1,132 @@
+[
+  {
+    "model": "catalog.product",
+    "pk": 1,
+    "fields": {
+      "name": "Смартфон Samsung Galaxy S23",
+      "description": "Флагманский смартфон с камерой 200 МП",
+      "image": "",
+      "category": 1,
+      "price": "79999.99",
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 2,
+    "fields": {
+      "name": "Ноутбук Asus ZenBook",
+      "description": "Ультрабук с OLED-экраном",
+      "image": "",
+      "category": 1,
+      "price": "89999.99",
+      "created_at": "2024-01-15T10:05:00Z",
+      "updated_at": "2024-01-15T10:05:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 3,
+    "fields": {
+      "name": "Наушники Sony WH-1000XM5",
+      "description": "Беспроводные наушники с шумоподавлением",
+      "image": "",
+      "category": 1,
+      "price": "29999.99",
+      "created_at": "2024-01-15T10:10:00Z",
+      "updated_at": "2024-01-15T10:10:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 4,
+    "fields": {
+      "name": "Роман 'Мастер и Маргарита'",
+      "description": "Классика русской литературы",
+      "image": "",
+      "category": 2,
+      "price": "899.99",
+      "created_at": "2024-01-15T10:15:00Z",
+      "updated_at": "2024-01-15T10:15:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 5,
+    "fields": {
+      "name": "Учебник по Python",
+      "description": "Полное руководство по программированию на Python",
+      "image": "",
+      "category": 2,
+      "price": "1999.99",
+      "created_at": "2024-01-15T10:20:00Z",
+      "updated_at": "2024-01-15T10:20:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 6,
+    "fields": {
+      "name": "Футболка Nike Sportswear",
+      "description": "Хлопковая футболка для спорта и повседневной носки",
+      "image": "",
+      "category": 3,
+      "price": "2999.99",
+      "created_at": "2024-01-15T10:25:00Z",
+      "updated_at": "2024-01-15T10:25:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 7,
+    "fields": {
+      "name": "Джинсы Levi's 501",
+      "description": "Классические прямые джинсы",
+      "image": "",
+      "category": 3,
+      "price": "5999.99",
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-15T10:30:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 8,
+    "fields": {
+      "name": "Офисное кресло",
+      "description": "Эргономичное кресло для работы",
+      "image": "",
+      "category": 4,
+      "price": "12999.99",
+      "created_at": "2024-01-15T10:35:00Z",
+      "updated_at": "2024-01-15T10:35:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 9,
+    "fields": {
+      "name": "Футбольный мяч",
+      "description": "Мяч для профессионального футбола",
+      "image": "",
+      "category": 5,
+      "price": "2999.99",
+      "created_at": "2024-01-15T10:40:00Z",
+      "updated_at": "2024-01-15T10:40:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 10,
+    "fields": {
+      "name": "Гантели 10 кг",
+      "description": "Набор разборных гантелей",
+      "image": "",
+      "category": 5,
+      "price": "3999.99",
+      "created_at": "2024-01-15T10:45:00Z",
+      "updated_at": "2024-01-15T10:45:00Z"
+    }
+  }
+]
