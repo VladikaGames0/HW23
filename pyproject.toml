@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "hw23"
+version = "0.1.0"
+description = "Django каталог товаров"
+authors = ["vroma <vromasov5@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+Django = ">=5.0"
+Pillow = ">=10.4.0"  # Более новая версия для Python 3.13
+python-dotenv = "1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

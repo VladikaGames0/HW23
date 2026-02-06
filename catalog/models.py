@@ -1,5 +1,5 @@
 from django.db import models
-
+from decimal import Decimal
 
 class Category(models.Model):
     name = models.CharField(max_length=100, verbose_name='Наименование')
@@ -30,6 +30,16 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата последнего изменения')
 
+    # Добавим новые поля
+    sku = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name='Артикул')
+    stock = models.IntegerField(default=0, verbose_name='Количество на складе')
+    is_available = models.BooleanField(default=True, verbose_name='В наличии')
+    manufacturer = models.CharField(max_length=100, blank=True, null=True, verbose_name='Производитель')
+    weight = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True, verbose_name='Вес (кг)')
+    dimensions = models.CharField(max_length=50, blank=True, null=True, verbose_name='Габариты')
+    warranty = models.IntegerField(default=12, verbose_name='Гарантия (мес)')
+    rating = models.FloatField(default=0.0, verbose_name='Рейтинг')
+
     class Meta:
         verbose_name = 'Продукт'
         verbose_name_plural = 'Продукты'
@@ -37,3 +47,14 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    # Метод для проверки наличия
+    def in_stock(self):
+        return self.stock > 0 and self.is_available
+
+    # Метод для расчета скидки (пример)
+    def get_discounted_price(self, discount_percent=10):
+        # Преобразуем discount_percent в Decimal перед вычислением
+        discount_decimal = Decimal(str(discount_percent)) / Decimal('100')
+        discounted_price = self.price * (Decimal('1') - discount_decimal)
+        return discounted_price.quantize(Decimal('0.01'))
