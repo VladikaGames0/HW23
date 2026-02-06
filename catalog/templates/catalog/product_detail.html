@@ -3,185 +3,207 @@
 {% block title %}{{ product.name }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <!-- Левая колонка с изображением -->
-    <div class="col-lg-5 mb-4">
-        <div class="card">
-            <div class="card-body text-center">
-                {% if product.image %}
-                <img src="{{ product.image.url }}" class="img-fluid rounded mb-3" alt="{{ product.name }}" style="max-height: 400px;">
-                {% else %}
-                <img src="https://via.placeholder.com/500x400?text=No+Image" class="img-fluid rounded mb-3" alt="Нет изображения">
-                {% endif %}
+<div class="container mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'category_products' product.category.id %}">{{ product.category.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ product.name|truncatechars:30 }}</li>
+        </ol>
+    </nav>
 
-                <!-- Кнопки действий -->
-                <div class="d-grid gap-2">
-                    <button class="btn btn-success btn-lg">
-                        <i class="bi bi-cart-plus"></i> Добавить в корзину
-                    </button>
-                    <button class="btn btn-outline-primary">
-                        <i class="bi bi-heart"></i> В избранное
-                    </button>
+    <div class="row">
+        <!-- Левая колонка - изображение и галерея -->
+        <div class="col-md-5">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" class="img-fluid rounded" alt="{{ product.name }}" style="max-height: 400px;">
+                    {% else %}
+                        <img src="https://via.placeholder.com/500x400?text=No+Image" class="img-fluid rounded" alt="Нет изображения">
+                    {% endif %}
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Правая колонка с информацией -->
-    <div class="col-lg-7">
-        <!-- Хлебные крошки -->
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb bg-light p-2 rounded">
-                <li class="breadcrumb-item"><a href="{% url 'index' %}"><i class="bi bi-house"></i> Главная</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'category_products' product.category.id %}">{{ product.category.name }}</a></li>
-                <li class="breadcrumb-item active">{{ product.name|truncatechars:50 }}</li>
-            </ol>
-        </nav>
-
-        <!-- Заголовок и цена -->
-        <div class="mb-4">
-            <h1 class="mb-2">{{ product.name }}</h1>
-            <div class="d-flex align-items-center mb-3">
-                <span class="badge bg-secondary me-2">Артикул: {{ product.id }}</span>
-                <span class="badge bg-info">Категория: {{ product.category.name }}</span>
-            </div>
-            <div class="display-4 text-primary mb-4">
-                {{ product.price }} <small class="text-muted fs-5">руб.</small>
-            </div>
-        </div>
-
-        <!-- Описание товара -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Описание товара</h5>
-            </div>
-            <div class="card-body">
-                {% if product.description %}
-                    <p class="card-text fs-5">{{ product.description|linebreaks }}</p>
-                {% else %}
-                    <p class="card-text text-muted">Описание отсутствует</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Детальная информация -->
-        <div class="card mb-4">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0"><i class="bi bi-card-checklist"></i> Детальная информация</h5>
-            </div>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>ID товара:</strong></span>
-                    <span class="text-muted">{{ product.id }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>Категория:</strong></span>
-                    <span>
-                        <a href="{% url 'category_products' product.category.id %}" class="text-decoration-none">
-                            {{ product.category.name }}
-                        </a>
-                    </span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>Описание категории:</strong></span>
-                    <span class="text-muted text-end">{{ product.category.description|default:"Не указано" }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>Цена:</strong></span>
-                    <span class="text-success fw-bold">{{ product.price }} руб.</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>Дата добавления:</strong></span>
-                    <span class="text-muted">{{ product.created_at|date:"d.m.Y H:i" }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>Последнее обновление:</strong></span>
-                    <span class="text-muted">{{ product.updated_at|date:"d.m.Y H:i" }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>Статус:</strong></span>
-                    <span class="badge bg-success">В наличии</span>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Кнопки навигации -->
-        <div class="d-flex justify-content-between mb-4">
-            <a href="{% url 'index' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Вернуться в каталог
-            </a>
-            <a href="{% url 'category_products' product.category.id %}" class="btn btn-outline-primary">
-                Все товары категории <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Похожие товары -->
-{% if related_products %}
-<div class="row mt-5">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-warning text-dark">
-                <h4 class="mb-0"><i class="bi bi-lightning"></i> Похожие товары</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {% for related in related_products %}
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <div class="card h-100 border shadow-sm">
-                            {% if related.image %}
-                            <img src="{{ related.image.url }}" class="card-img-top" alt="{{ related.name }}" style="height: 150px; object-fit: cover;">
-                            {% else %}
-                            <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="Нет изображения" style="height: 150px; object-fit: cover;">
-                            {% endif %}
-                            <div class="card-body d-flex flex-column">
-                                <h6 class="card-title">{{ related.name|truncatechars:50 }}</h6>
-                                <p class="card-text text-primary fw-bold">{{ related.price }} руб.</p>
-                                <div class="mt-auto">
-                                    <a href="{% url 'product_detail' related.id %}" class="btn btn-sm btn-outline-primary w-100">
-                                        <i class="bi bi-eye"></i> Просмотр
-                                    </a>
-                                </div>
-                            </div>
+                <div class="card-footer">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <i class="bi bi-truck fs-4 text-primary"></i>
+                            <div class="small">Доставка 1-3 дня</div>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-shield-check fs-4 text-success"></i>
+                            <div class="small">Гарантия {{ product.warranty }} мес</div>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-arrow-return-left fs-4 text-warning"></i>
+                            <div class="small">Возврат 14 дней</div>
                         </div>
                     </div>
-                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Действия -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-success btn-lg">
+                    <i class="bi bi-cart-plus"></i> Добавить в корзину
+                </button>
+                <button class="btn btn-outline-primary">
+                    <i class="bi bi-heart"></i> В избранное
+                </button>
+                <button class="btn btn-outline-secondary">
+                    <i class="bi bi-share"></i> Поделиться
+                </button>
+            </div>
+        </div>
+
+        <!-- Правая колонка - информация -->
+        <div class="col-md-7">
+            <!-- Заголовок и рейтинг -->
+            <div class="mb-4">
+                <h1 class="mb-2">{{ product.name }}</h1>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="me-3">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= product.rating %}
+                                <i class="bi bi-star-fill text-warning"></i>
+                            {% else %}
+                                <i class="bi bi-star text-warning"></i>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="ms-2">({{ product.rating|floatformat:1 }}/5)</span>
+                    </div>
+                    <span class="badge {% if product.in_stock %}bg-success{% else %}bg-danger{% endif %}">
+                        {% if product.in_stock %}В наличии{% else %}Нет в наличии{% endif %}
+                    </span>
+                </div>
+
+                <!-- Цена -->
+                <div class="mb-4">
+                    <h2 class="text-primary display-5">{{ product.price }} ₽</h2>
+                    {% if product.get_discounted_price %}
+                        <div>
+                            <span class="text-muted text-decoration-line-through me-2">{{ product.price }} ₽</span>
+                            <span class="badge bg-danger">-10%</span>
+                            <span class="text-success fw-bold ms-2">{{ product.get_discounted_price }} ₽</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Описание -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Описание товара</h5>
+                </div>
+                <div class="card-body">
+                    {% if product.description %}
+                        <p class="card-text">{{ product.description|linebreaks }}</p>
+                    {% else %}
+                        <p class="card-text text-muted">Описание отсутствует</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Детальная информация -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Характеристики</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th>Артикул:</th>
+                                        <td>{{ product.sku|default:"Не указан" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Категория:</th>
+                                        <td>
+                                            <a href="{% url 'category_products' product.category.id %}" class="text-decoration-none">
+                                                {{ product.category.name }}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Производитель:</th>
+                                        <td>{{ product.manufacturer|default:"Не указан" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Количество на складе:</th>
+                                        <td>{{ product.stock }} шт.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th>Вес:</th>
+                                        <td>{{ product.weight|default:"Не указан" }} кг</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Габариты:</th>
+                                        <td>{{ product.dimensions|default:"Не указаны" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Дата добавления:</th>
+                                        <td>{{ product.created_at|date:"d.m.Y H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Обновлено:</th>
+                                        <td>{{ product.updated_at|date:"d.m.Y H:i" }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
 
-<!-- Статистика -->
-<div class="row mt-4">
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5><i class="bi bi-star text-warning"></i> Рейтинг</h5>
-                <p class="display-6">4.8/5.0</p>
-                <p class="text-muted small">на основе 128 отзывов</p>
+    <!-- Похожие товары -->
+    {% if related_products %}
+    <div class="mt-5">
+        <h3 class="mb-4">Похожие товары</h3>
+        <div class="row">
+            {% for related in related_products %}
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-img-top text-center p-3" style="height: 150px;">
+                        {% if related.image %}
+                            <img src="{{ related.image.url }}" class="img-fluid h-100" alt="{{ related.name }}" style="object-fit: contain;">
+                        {% else %}
+                            <img src="https://via.placeholder.com/200x150?text=No+Image" class="img-fluid h-100" alt="Нет изображения" style="object-fit: contain;">
+                        {% endif %}
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">{{ related.name|truncatechars:40 }}</h6>
+                        <p class="card-text text-primary fw-bold mt-auto">{{ related.price }} ₽</p>
+                        <a href="{% url 'product_detail' related.id %}" class="btn btn-sm btn-outline-primary">
+                            Подробнее
+                        </a>
+                    </div>
+                </div>
             </div>
+            {% endfor %}
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5><i class="bi bi-truck text-success"></i> Доставка</h5>
-                <p class="h4">1-3 дня</p>
-                <p class="text-muted small">по всей России</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5><i class="bi bi-shield-check text-primary"></i> Гарантия</h5>
-                <p class="h4">12 месяцев</p>
-                <p class="text-muted small">официальная гарантия</p>
-            </div>
-        </div>
+    {% endif %}
+
+    <!-- Навигация -->
+    <div class="mt-5 d-flex justify-content-between">
+        <a href="{% url 'index' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Вернуться в каталог
+        </a>
+        {% if product.category %}
+        <a href="{% url 'category_products' product.category.id %}" class="btn btn-outline-primary">
+            Все товары категории <i class="bi bi-arrow-right"></i>
+        </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
