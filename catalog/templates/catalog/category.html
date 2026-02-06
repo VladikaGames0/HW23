@@ -1,6 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ category.name }}{% endblock %}
+{% block title %}{{ category.name }} | Каталог товаров{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'index' %}">Главная</a></li>
+        <li class="breadcrumb-item active">{{ category.name }}</li>
+    </ol>
+</nav>
+{% endblock %}
 
 {% block content %}
 <h1 class="mb-4">{{ category.name }}</h1>

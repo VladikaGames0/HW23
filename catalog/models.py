@@ -1,5 +1,5 @@
 from django.db import models
-
+from decimal import Decimal
 
 class Category(models.Model):
     name = models.CharField(max_length=100, verbose_name='Наименование')
@@ -54,4 +54,7 @@ class Product(models.Model):
 
     # Метод для расчета скидки (пример)
     def get_discounted_price(self, discount_percent=10):
-        return round(self.price * (1 - discount_percent / 100), 2)
+        # Преобразуем discount_percent в Decimal перед вычислением
+        discount_decimal = Decimal(str(discount_percent)) / Decimal('100')
+        discounted_price = self.price * (Decimal('1') - discount_decimal)
+        return discounted_price.quantize(Decimal('0.01'))
