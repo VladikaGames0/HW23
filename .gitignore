@@ -61,3 +61,4 @@ share/python-wheels/
 media/
 staticfiles/
 *.db
+qlite3
