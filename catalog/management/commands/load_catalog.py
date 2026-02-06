@@ -23,10 +23,10 @@ class Command(BaseCommand):
         ]
 
         for fixture in fixtures:
-            fixture_path = os.path.join('catalog', 'fixtures', fixture)
             self.stdout.write(f'Загружаю фикстуру: {fixture}')
             try:
-                call_command('loaddata', fixture_path)
+                # Используем стандартный путь для фикстур
+                call_command('loaddata', fixture)
                 self.stdout.write(self.style.SUCCESS(f'✓ Фикстура {fixture} успешно загружена'))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'✗ Ошибка при загрузке {fixture}: {e}'))

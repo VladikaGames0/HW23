@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ category.name }}</h1>
+
+{% if category.description %}
+<div class="alert alert-info mb-4">
+    <p class="mb-0">{{ category.description }}</p>
+</div>
+{% endif %}
+
+<div class="row">
+    {% for product in products %}
+    <div class="col-md-4">
+        <div class="card product-card h-100">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" class="card-img-top product-image" alt="{{ product.name }}">
+            {% else %}
+            <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top product-image" alt="Нет изображения">
+            {% endif %}
+
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text truncate flex-grow-1">
+                    {{ product.description|truncatechars:100 }}
+                </p>
+                <div class="mt-auto">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="h5 text-primary">{{ product.price }} руб.</span>
+                        <a href="{% url 'product_detail' product.id %}" class="btn btn-primary">
+                            Подробнее
+                        </a>
+                    </div>
+                    <small class="text-muted">
+                        Добавлено: {{ product.created_at|date:"d.m.Y" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">Товары не найдены!</h4>
+            <p>В этой категории пока нет товаров. Посмотрите другие категории.</p>
+            <a href="{% url 'index' %}" class="btn btn-outline-primary">Вернуться в каталог</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if products %}
+<div class="mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Статистика категории</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><strong>Товаров в категории:</strong> {{ products|length }}</li>
+                        <li><strong>Средняя цена:</strong>
+                            {% with avg_price=products|dictsort:"price" %}
+                                {% if avg_price %}
+                                    {{ avg_price.0.price }} руб.
+                                {% else %}
+                                    -
+                                {% endif %}
+                            {% endwith %}
+                        </li>
+                        <li><strong>Самый дорогой товар:</strong>
+                            {% with max_price=products|dictsortreversed:"price"|first %}
+                                {% if max_price %}
+                                    {{ max_price.name }} ({{ max_price.price }} руб.)
+                                {% else %}
+                                    -
+                                {% endif %}
+                            {% endwith %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Другие категории</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for cat in categories %}
+                            {% if cat.id != category.id %}
+                            <a href="{% url 'category_products' cat.id %}" class="list-group-item list-group-item-action">
+                                {{ cat.name }}
+                                <span class="badge bg-primary rounded-pill float-end">
+                                    {{ cat.products.count }}
+                                </span>
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'index' %}" class="btn btn-secondary">
+        ← Вернуться на главную
+    </a>
+</div>
+{% endblock %}

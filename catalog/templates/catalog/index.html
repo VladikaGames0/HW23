@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Каталог товаров</h1>
+
+<div class="row">
+    {% for product in products %}
+    <div class="col-md-4">
+        <div class="card product-card">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" class="card-img-top product-image" alt="{{ product.name }}">
+            {% else %}
+            <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top product-image" alt="Нет изображения">
+            {% endif %}
+
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text truncate">
+                    {{ product.description|truncatechars:100 }}
+                </p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="h4 text-primary">{{ product.price }} руб.</span>
+                    <a href="{% url 'product_detail' product.id %}" class="btn btn-primary">
+                        Подробнее
+                    </a>
+                </div>
+                <small class="text-muted">Категория: {{ product.category.name }}</small>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">Товары не найдены</div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-4">
+    <h4>Статистика:</h4>
+    <ul>
+        <li>Всего товаров: {{ products|length }}</li>
+        <li>Категорий: {{ categories|length }}</li>
+    </ul>
+</div>
+{% endblock %}
