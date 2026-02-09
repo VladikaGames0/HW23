@@ -1,39 +1,56 @@
-from django.shortcuts import render, get_object_or_404
-from .models import Product, Category
+from django.shortcuts import get_object_or_404
+from django.views.generic import ListView, DetailView, TemplateView
+from .models import Category, Product
 
 
-def index(request):
-    """Главная страница со списком товаров"""
-    products = Product.objects.all()
-    categories = Category.objects.all()
-    return render(request, 'catalog/index.html', {
-        'products': products,
-        'categories': categories
-    })
+class IndexView(ListView):
+    model = Product
+    template_name = 'catalog/index.html'
+    context_object_name = 'products'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        return context
 
 
-def product_detail(request, product_id):
-    """Страница с подробной информацией о товаре"""
-    product = get_object_or_404(Product, id=product_id)
-    related_products = Product.objects.filter(
-        category=product.category
-    ).exclude(id=product.id)[:4]
+class ProductDetailView(DetailView):
+    model = Product
+    template_name = 'catalog/product_detail.html'
+    context_object_name = 'product'
+    pk_url_kwarg = 'product_id'
 
-    return render(request, 'catalog/product_detail.html', {
-        'product': product,
-        'categories': Category.objects.all(),
-        'related_products': related_products
-    })
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        context['related_products'] = Product.objects.filter(
+            category=self.object.category
+        ).exclude(id=self.object.id)[:4]
+        return context
 
 
-def category_products(request, category_id):
-    """Товары определенной категории"""
-    category = get_object_or_404(Category, id=category_id)
-    products = Product.objects.filter(category=category)
-    categories = Category.objects.all()
+class CategoryProductsView(ListView):
+    template_name = 'catalog/category.html'
+    context_object_name = 'products'
 
-    return render(request, 'catalog/category.html', {
-        'category': category,
-        'products': products,
-        'categories': categories
-    })
+    def get_queryset(self):
+        self.category = get_object_or_404(Category, id=self.kwargs['category_id'])
+        return Product.objects.filter(category=self.category)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['category'] = self.category
+        context['categories'] = Category.objects.all()
+        return context
+
+
+class ContactsView(TemplateView):
+    template_name = 'catalog/contacts.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Контакты'
+        context['phone'] = '+7 (999) 123-45-67'
+        context['email'] = 'info@catalog.ru'
+        context['address'] = 'г. Москва, ул. Примерная, д. 10'
+        return context
