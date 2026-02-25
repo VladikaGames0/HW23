@@ -4,21 +4,20 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Avg
 
 from .models import Category, Product
 from .forms import ProductForm
 
 
 class IndexView(ListView):
-    """Главная страница со списком товаров"""
+    """Главная страница со списком товаров - ОБЩЕДОСТУПНАЯ"""
     model = Product
     template_name = 'catalog/index.html'
     context_object_name = 'products'
     paginate_by = 9
 
     def get_queryset(self):
-        # Фильтрация по категории, если указана
         category_id = self.request.GET.get('category')
         if category_id:
             return Product.objects.filter(category_id=category_id, is_available=True)
@@ -31,7 +30,7 @@ class IndexView(ListView):
 
 
 class ProductDetailView(DetailView):
-    """Страница с подробной информацией о товаре"""
+    """Страница с подробной информацией о товаре - ОБЩЕДОСТУПНАЯ"""
     model = Product
     template_name = 'catalog/product_detail.html'
     context_object_name = 'product'
@@ -47,24 +46,36 @@ class ProductDetailView(DetailView):
 
 
 class CategoryProductsView(ListView):
-    """Товары определенной категории"""
+    """Товары определенной категории - ОБЩЕДОСТУПНАЯ"""
     template_name = 'catalog/category.html'
     context_object_name = 'products'
     paginate_by = 9
 
     def get_queryset(self):
         self.category = get_object_or_404(Category, id=self.kwargs['category_id'])
-        return Product.objects.filter(category=self.category, is_available=True)
+        return Product.objects.filter(category=self.category, is_available=True).select_related('category')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category'] = self.category
         context['categories'] = Category.objects.all()
+
+        products = context['products']
+        if products:
+            prices = [p.price for p in products]
+            context['avg_price'] = sum(prices) / len(prices)
+            context['min_price'] = min(prices)
+            context['max_price'] = max(prices)
+        else:
+            context['avg_price'] = 0
+            context['min_price'] = 0
+            context['max_price'] = 0
+
         return context
 
 
 class ContactsView(TemplateView):
-    """Страница контактов"""
+    """Страница контактов - ОБЩЕДОСТУПНАЯ"""
     template_name = 'catalog/contacts.html'
 
     def get_context_data(self, **kwargs):
@@ -77,13 +88,20 @@ class ContactsView(TemplateView):
         return context
 
 
-# Новые CBV для CRUD операций
+# ============== КОНТРОЛЛЕРЫ С ОГРАНИЧЕННЫМ ДОСТУПОМ ==============
+# Только для авторизованных пользователей
+
 class ProductCreateView(LoginRequiredMixin, CreateView):
-    """Создание нового продукта"""
+    """Создание нового продукта - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ"""
     model = Product
     form_class = ProductForm
     template_name = 'catalog/product_form.html'
     success_url = reverse_lazy('catalog:product_list')
+
+    # Перенаправление на страницу входа для неавторизованных
+    login_url = reverse_lazy('users:login')
+    # Сообщение при перенаправлении
+    redirect_field_name = 'next'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -102,11 +120,14 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
 
 
 class ProductUpdateView(LoginRequiredMixin, UpdateView):
-    """Редактирование существующего продукта"""
+    """Редактирование существующего продукта - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ"""
     model = Product
     form_class = ProductForm
     template_name = 'catalog/product_form.html'
     pk_url_kwarg = 'product_id'
+
+    login_url = reverse_lazy('users:login')
+    redirect_field_name = 'next'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -126,11 +147,14 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class ProductDeleteView(LoginRequiredMixin, DeleteView):
-    """Удаление продукта"""
+    """Удаление продукта - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ"""
     model = Product
     template_name = 'catalog/product_confirm_delete.html'
     pk_url_kwarg = 'product_id'
     success_url = reverse_lazy('catalog:product_list')
+
+    login_url = reverse_lazy('users:login')
+    redirect_field_name = 'next'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -143,15 +167,17 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class ProductListView(ListView):
-    """Список всех продуктов (для администраторов)"""
+class ProductListView(LoginRequiredMixin, ListView):
+    """Список всех продуктов (для администраторов) - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ"""
     model = Product
     template_name = 'catalog/product_list.html'
     context_object_name = 'products'
     paginate_by = 20
 
+    login_url = reverse_lazy('users:login')
+    redirect_field_name = 'next'
+
     def get_queryset(self):
-        # Поиск по названию или описанию
         search_query = self.request.GET.get('search', '')
         if search_query:
             return Product.objects.filter(

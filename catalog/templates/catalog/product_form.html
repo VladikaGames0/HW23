@@ -227,9 +227,11 @@
                 <div class="card-body">
                     <p class="mb-2">Не используйте следующие слова в названии и описании:</p>
                     <div class="d-flex flex-wrap gap-2">
-                        {% for word in form.FORBIDDEN_WORDS %}
-                        <span class="badge bg-danger">{{ word }}</span>
-                        {% endfor %}
+                        {% with forbidden_words=form.get_forbidden_words %}
+                            {% for word in forbidden_words %}
+                            <span class="badge bg-danger">{{ word }}</span>
+                            {% endfor %}
+                        {% endwith %}
                     </div>
                 </div>
             </div>

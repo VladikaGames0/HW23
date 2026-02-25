@@ -21,7 +21,7 @@ class ProductForm(forms.ModelForm):
             'warranty', 'rating'
         ]
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
         }
 
@@ -62,29 +62,35 @@ class ProductForm(forms.ModelForm):
                     'min': '0'
                 })
 
+    def get_forbidden_words(self):
+        """Возвращает список запрещенных слов для использования в шаблоне"""
+        return self.FORBIDDEN_WORDS
+
     def clean_name(self):
         """Валидация названия продукта"""
-        name = self.cleaned_data.get('name', '').lower()
+        name = self.cleaned_data.get('name', '')
+        name_lower = name.lower()
 
         for forbidden_word in self.FORBIDDEN_WORDS:
-            if forbidden_word in name:
+            if forbidden_word in name_lower:
                 raise ValidationError(
                     f'Название содержит запрещенное слово: "{forbidden_word}"'
                 )
 
-        return self.cleaned_data['name']
+        return name
 
     def clean_description(self):
         """Валидация описания продукта"""
-        description = self.cleaned_data.get('description', '').lower()
+        description = self.cleaned_data.get('description', '')
+        description_lower = description.lower()
 
         for forbidden_word in self.FORBIDDEN_WORDS:
-            if forbidden_word in description:
+            if forbidden_word in description_lower:
                 raise ValidationError(
                     f'Описание содержит запрещенное слово: "{forbidden_word}"'
                 )
 
-        return self.cleaned_data['description']
+        return description
 
     def clean_price(self):
         """Валидация цены продукта"""

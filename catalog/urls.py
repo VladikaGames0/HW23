@@ -7,13 +7,13 @@ from .views import (
 app_name = 'catalog'
 
 urlpatterns = [
+    # Общедоступные страницы
     path("", IndexView.as_view(), name="index"),
-
     path("product/<int:product_id>/", ProductDetailView.as_view(), name="product_detail"),
     path("category/<int:category_id>/", CategoryProductsView.as_view(), name="category_products"),
     path("contacts/", ContactsView.as_view(), name="contacts"),
 
-    # CRUD маршруты
+    # Страницы с ограниченным доступом (только для авторизованных)
     path("products/", ProductListView.as_view(), name="product_list"),
     path("products/create/", ProductCreateView.as_view(), name="product_create"),
     path("product/<int:product_id>/edit/", ProductUpdateView.as_view(), name="product_edit"),

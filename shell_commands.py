@@ -9,7 +9,6 @@ import django
 from django.db import models
 
 # Настройка Django
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
 django.setup()
 
@@ -97,11 +96,14 @@ def run_commands():
 
     # 3.4 Обновление цены
     print("\n3.4 ОБНОВЛЕНИЕ ЦЕНЫ:")
-    iphone = Product.objects.get(name__icontains="iPhone")
-    print(f"  Старая цена iPhone: {iphone.price} руб.")
-    iphone.price = 94999.99
-    iphone.save()
-    print(f"  Новая цена iPhone: {iphone.price} руб.")
+    try:
+        iphone = Product.objects.get(name__icontains="iPhone")
+        print(f"  Старая цена iPhone: {iphone.price} руб.")
+        iphone.price = 94999.99
+        iphone.save()
+        print(f"  Новая цена iPhone: {iphone.price} руб.")
+    except Product.DoesNotExist:
+        print("  iPhone не найден")
 
     # 3.5 Удаление продукта
     print("\n3.5 УДАЛЕНИЕ ПРОДУКТА:")
@@ -148,9 +150,9 @@ def run_commands():
 
     print(f"  Всего категорий: {total_categories}")
     print(f"  Всего продуктов: {total_products}")
-    print(f"  Средняя цена: {avg_price:.2f} руб.")
-    print(f"  Максимальная цена: {max_price:.2f} руб.")
-    print(f"  Минимальная цена: {min_price:.2f} руб.")
+    print(f"  Средняя цена: {avg_price:.2f} руб." if avg_price else "  Средняя цена: 0 руб.")
+    print(f"  Максимальная цена: {max_price:.2f} руб." if max_price else "  Максимальная цена: 0 руб.")
+    print(f"  Минимальная цена: {min_price:.2f} руб." if min_price else "  Минимальная цена: 0 руб.")
 
     print("\n" + "=" * 50)
     print("ВЫПОЛНЕНИЕ ЗАВЕРШЕНО!")

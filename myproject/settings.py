@@ -40,7 +40,24 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "catalog.apps.CatalogConfig",
     'blog.apps.BlogConfig',
+    'users.apps.UsersConfig',
 ]
+AUTH_USER_MODEL = 'users.User'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Для реальной отправки
+
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Уберите комментарий!
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'vladikagames22@gmail.com'
+EMAIL_HOST_PASSWORD = 'irkobpfzuzgtfmpr'  # Пароль приложения
+DEFAULT_FROM_EMAIL = 'vladikagames22@gmail.com'
+
+# Для разработки можно использовать консольный бэкенд
+# if DEBUG:
+#     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Закомментируйте эту строку
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -76,15 +93,17 @@ WSGI_APPLICATION = "myproject.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Для PostgreSQL
 # DATABASES = {
-#   'default': {
-#      'ENGINE': 'django.db.backends.postgresql',
-#     'NAME': 'myproject_db',
-#    'USER': 'myproject_user',
-### 'PORT': '5432',
+#    'default': {
+#       'ENGINE': 'django.db.backends.postgresql',
+#      'NAME': 'myproject_db',
+#     'USER': 'myproject_user',
+#    'PASSWORD': 'your_password',
+#    'HOST': 'localhost',
+#    'PORT': '5432',
 # }
 # }
-
 
 DATABASES = {
     "default": {
@@ -129,6 +148,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files
 MEDIA_URL = "/media/"
@@ -138,3 +159,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Login URL for LoginRequiredMixin
+# Login URL settings
+LOGIN_URL = 'users:login'
+LOGIN_REDIRECT_URL = 'catalog:index'
+LOGOUT_REDIRECT_URL = 'catalog:index'
