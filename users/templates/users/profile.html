@@ -22,7 +22,7 @@
                     {% endif %}
 
                     <h5>{{ user.get_full_name|default:user.username }}</h5>
-                    <p class="text-muted">{{ user.email }}</p>
+
                 </div>
             </div>
         </div>
@@ -35,29 +35,13 @@
                 <div class="card-body">
                     <table class="table">
                         <tr>
-                            <th>Имя пользователя:</th>
+                            <th>Email:</th>
                             <td>{{ user.username }}</td>
                         </tr>
-                        <tr>
-                            <th>Email:</th>
-                            <td>{{ user.email }}</td>
+
                         </tr>
                         <tr>
-                            <th>Имя:</th>
-                            <td>{{ user.first_name|default:"Не указано" }}</td>
-                        </tr>
-                        <tr>
-                            <th>Фамилия:</th>
-                            <td>{{ user.last_name|default:"Не указано" }}</td>
-                        </tr>
-                        <tr>
-                            <th>Телефон:</th>
-                            <td>{{ user.phone_number|default:"Не указан" }}</td>
-                        </tr>
-                        <tr>
-                            <th>Страна:</th>
-                            <td>{{ user.country|default:"Не указана" }}</td>
-                        </tr>
+
                         <tr>
                             <th>Дата регистрации:</th>
                             <td>{{ user.date_joined|date:"d.m.Y H:i" }}</td>

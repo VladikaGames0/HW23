@@ -15,3 +15,5 @@ Django приложение для управления каталогом то�
 ```bash
 git clone https://github.com/VladikaGames0/HW23.git
 cd HW23
+
+
