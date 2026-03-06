@@ -117,7 +117,22 @@
                                     </div>
                                     {% endif %}
                                 </div>
-
+                                <div class="mb-3">
+    <label for="{{ form.publication_status.id_for_label }}" class="form-label">
+        Статус публикации
+    </label>
+    {{ form.publication_status }}
+    {% if form.publication_status.errors %}
+    <div class="text-danger small mt-1">
+        {% for error in form.publication_status.errors %}
+        <div>{{ error }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if form.publication_status.help_text %}
+    <div class="form-text">{{ form.publication_status.help_text }}</div>
+    {% endif %}
+</div>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">

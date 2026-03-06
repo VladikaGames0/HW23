@@ -1,6 +1,6 @@
 from decimal import Decimal
-
 from django.db import models
+from django.conf import settings
 
 
 class Category(models.Model):
@@ -17,6 +17,14 @@ class Category(models.Model):
 
 
 class Product(models.Model):
+    # Статусы публикации
+    PUBLICATION_STATUS_CHOICES = [
+        ('draft', 'Черновик'),
+        ('published', 'Опубликовано'),
+        ('moderation', 'На модерации'),
+        ('rejected', 'Отклонено'),
+    ]
+
     name = models.CharField(max_length=100, verbose_name="Наименование")
     description = models.TextField(blank=True, null=True, verbose_name="Описание")
     image = models.ImageField(
@@ -38,7 +46,25 @@ class Product(models.Model):
         auto_now=True, verbose_name="Дата последнего изменения"
     )
 
-    # Добавим новые поля
+    # Поле владельца продукта (будет добавлено позже)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='products',
+        verbose_name="Владелец",
+        null=True,  # Временно разрешаем null для существующих записей
+        blank=True
+    )
+
+    # Поле статуса публикации
+    publication_status = models.CharField(
+        max_length=20,
+        choices=PUBLICATION_STATUS_CHOICES,
+        default='draft',  # По умолчанию черновик (не опубликован)
+        verbose_name="Статус публикации"
+    )
+
+    # Существующие поля
     sku = models.CharField(
         max_length=50, unique=True, blank=True, null=True, verbose_name="Артикул"
     )
@@ -61,12 +87,22 @@ class Product(models.Model):
         verbose_name_plural = "Продукты"
         ordering = ["name"]
 
+        # Добавляем кастомные права
+        permissions = [
+            ("can_unpublish_product", "Может отменять публикацию продукта"),
+            ("can_delete_any_product", "Может удалять любой продукт"),
+        ]
+
     def __str__(self):
         return self.name
 
     # Метод для проверки наличия
     def in_stock(self):
         return self.stock > 0 and self.is_available
+
+    # Метод для проверки, опубликован ли продукт
+    def is_published(self):
+        return self.publication_status == 'published'
 
     # Метод для расчета скидки (пример)
     def get_discounted_price(self, discount_percent=10):

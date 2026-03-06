@@ -18,15 +18,16 @@ class ProductForm(forms.ModelForm):
             'name', 'description', 'category', 'price',
             'image', 'sku', 'stock', 'is_available',
             'manufacturer', 'weight', 'dimensions',
-            'warranty', 'rating'
+            'warranty', 'rating', 'publication_status'
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
+            'publication_status': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def __init__(self, *args, **kwargs):
-        """Инициализация формы с настройкой стилей"""
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
         # Настройка CSS-классов для всех полей
@@ -61,6 +62,11 @@ class ProductForm(forms.ModelForm):
                 field.widget.attrs.update({
                     'min': '0'
                 })
+
+        # Ограничиваем возможность изменения статуса публикации для обычных пользователей
+        if self.user and not self.user.has_perm('catalog.can_unpublish_product'):
+            self.fields['publication_status'].disabled = True
+            self.fields['publication_status'].help_text = 'Только модераторы могут изменять статус публикации'
 
     def get_forbidden_words(self):
         """Возвращает список запрещенных слов для использования в шаблоне"""

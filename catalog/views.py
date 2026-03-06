@@ -1,10 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.db.models import Q, Avg
+from django.core.exceptions import PermissionDenied
 
 from .models import Category, Product
 from .forms import ProductForm
@@ -18,10 +19,14 @@ class IndexView(ListView):
     paginate_by = 9
 
     def get_queryset(self):
+        # Показываем только опубликованные товары
         category_id = self.request.GET.get('category')
         if category_id:
-            return Product.objects.filter(category_id=category_id, is_available=True)
-        return Product.objects.filter(is_available=True)
+            return Product.objects.filter(
+                category_id=category_id,
+                publication_status='published'
+            )
+        return Product.objects.filter(publication_status='published')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -36,11 +41,20 @@ class ProductDetailView(DetailView):
     context_object_name = 'product'
     pk_url_kwarg = 'product_id'
 
+    def get_queryset(self):
+        # Владельцы видят свои товары даже если не опубликованы
+        if self.request.user.is_authenticated:
+            return Product.objects.filter(
+                Q(publication_status='published') | Q(owner=self.request.user)
+            )
+        return Product.objects.filter(publication_status='published')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.all()
         context['related_products'] = Product.objects.filter(
-            category=self.object.category
+            category=self.object.category,
+            publication_status='published'
         ).exclude(id=self.object.id)[:4]
         return context
 
@@ -53,7 +67,11 @@ class CategoryProductsView(ListView):
 
     def get_queryset(self):
         self.category = get_object_or_404(Category, id=self.kwargs['category_id'])
-        return Product.objects.filter(category=self.category, is_available=True).select_related('category')
+        # Показываем только опубликованные товары
+        return Product.objects.filter(
+            category=self.category,
+            publication_status='published'
+        ).select_related('category')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -88,8 +106,16 @@ class ContactsView(TemplateView):
         return context
 
 
-# ============== КОНТРОЛЛЕРЫ С ОГРАНИЧЕННЫМ ДОСТУПОМ ==============
-# Только для авторизованных пользователей
+# Миксин для проверки владельца или модератора
+class OwnerOrModeratorRequiredMixin(UserPassesTestMixin):
+    """Проверяет, является ли пользователь владельцем или модератором"""
+
+    def test_func(self):
+        product = self.get_object()
+        user = self.request.user
+        # Владелец или модератор (имеет право удалять любой продукт)
+        return user == product.owner or user.has_perm('catalog.can_delete_any_product')
+
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
     """Создание нового продукта - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ"""
@@ -98,10 +124,13 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
     template_name = 'catalog/product_form.html'
     success_url = reverse_lazy('catalog:product_list')
 
-    # Перенаправление на страницу входа для неавторизованных
     login_url = reverse_lazy('users:login')
-    # Сообщение при перенаправлении
     redirect_field_name = 'next'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -111,7 +140,11 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        messages.success(self.request, 'Продукт успешно создан!')
+        # Автоматически привязываем продукт к текущему пользователю
+        form.instance.owner = self.request.user
+        # Новый продукт по умолчанию создается как черновик
+        form.instance.publication_status = 'draft'
+        messages.success(self.request, 'Продукт успешно создан! Он отправлен на модерацию.')
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -119,8 +152,8 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         return super().form_invalid(form)
 
 
-class ProductUpdateView(LoginRequiredMixin, UpdateView):
-    """Редактирование существующего продукта - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ"""
+class ProductUpdateView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin, UpdateView):
+    """Редактирование существующего продукта - ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА ИЛИ МОДЕРАТОРА"""
     model = Product
     form_class = ProductForm
     template_name = 'catalog/product_form.html'
@@ -128,6 +161,12 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
 
     login_url = reverse_lazy('users:login')
     redirect_field_name = 'next'
+    raise_exception = True  # Показывать 403 вместо редиректа на логин
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -146,8 +185,8 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_invalid(form)
 
 
-class ProductDeleteView(LoginRequiredMixin, DeleteView):
-    """Удаление продукта - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ"""
+class ProductDeleteView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin, DeleteView):
+    """Удаление продукта - ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА ИЛИ МОДЕРАТОРА"""
     model = Product
     template_name = 'catalog/product_confirm_delete.html'
     pk_url_kwarg = 'product_id'
@@ -155,6 +194,7 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
 
     login_url = reverse_lazy('users:login')
     redirect_field_name = 'next'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -179,16 +219,23 @@ class ProductListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         search_query = self.request.GET.get('search', '')
+        base_queryset = Product.objects.all()
+
+        # Для обычных пользователей показываем только их продукты
+        if not self.request.user.has_perm('catalog.can_delete_any_product'):
+            base_queryset = base_queryset.filter(owner=self.request.user)
+
         if search_query:
-            return Product.objects.filter(
+            return base_queryset.filter(
                 Q(name__icontains=search_query) |
                 Q(description__icontains=search_query) |
                 Q(sku__icontains=search_query)
             ).order_by('name')
-        return Product.objects.all().order_by('name')
+        return base_queryset.order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('search', '')
         context['categories'] = Category.objects.all()
+        context['is_moderator'] = self.request.user.has_perm('catalog.can_delete_any_product')
         return context

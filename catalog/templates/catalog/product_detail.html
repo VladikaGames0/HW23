@@ -42,11 +42,40 @@
                 </div>
             </div>
 
-            <!-- Действия -->
-            <div class="d-grid gap-2">
-                <button class="btn btn-success btn-lg">
-                    <i class="bi bi-cart-plus"></i> Добавить в корзину
-                </button>
+           <div class="d-grid gap-2">
+    <button class="btn btn-success btn-lg">
+        <i class="bi bi-cart-plus"></i> Добавить в корзину
+    </button>
+
+    <!-- Кнопки управления для авторизованных пользователей -->
+    {% if user.is_authenticated %}
+        {% if user == product.owner or perms.catalog.can_delete_any_product %}
+        <div class="btn-group" role="group">
+            <a href="{% url 'catalog:product_edit' product.id %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+
+        </div>
+        {% endif %}
+    {% endif %}
+
+    <button class="btn btn-outline-primary">
+        <i class="bi bi-heart"></i> В избранное
+    </button>
+    <button class="btn btn-outline-secondary">
+        <i class="bi bi-share"></i> Поделиться
+    </button>
+</div>
+
+<!-- Статус публикации -->
+<div class="mt-3">
+    <span class="badge {% if product.publication_status == 'published' %}bg-success{% else %}bg-warning{% endif %}">
+        Статус: {{ product.get_publication_status_display }}
+    </span>
+    {% if product.owner %}
+    <small class="text-muted ms-2">Владелец: {{ product.owner.email }}</small>
+    {% endif %}
+</div>
 
                 <!-- Кнопки управления для авторизованных пользователей -->
                 {% if user.is_authenticated %}

@@ -49,8 +49,8 @@
                             <th>Название</th>
                             <th>Категория</th>
                             <th>Цена</th>
-                            <th>Наличие</th>
                             <th>Статус</th>
+                            <th>Владелец</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -79,12 +79,22 @@
                             </td>
                             <td>{{ product.category.name|default:"-" }}</td>
                             <td>{{ product.price }} ₽</td>
-                            <td>{{ product.stock }} шт.</td>
                             <td>
-                                {% if product.is_available %}
-                                <span class="badge bg-success">В наличии</span>
+                                {% if product.publication_status == 'published' %}
+                                <span class="badge bg-success">Опубликовано</span>
+                                {% elif product.publication_status == 'draft' %}
+                                <span class="badge bg-secondary">Черновик</span>
+                                {% elif product.publication_status == 'moderation' %}
+                                <span class="badge bg-warning">На модерации</span>
                                 {% else %}
-                                <span class="badge bg-danger">Нет в наличии</span>
+                                <span class="badge bg-danger">Отклонено</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.owner %}
+                                <small>{{ product.owner.email|truncatechars:15 }}</small>
+                                {% else %}
+                                <small class="text-muted">Нет</small>
                                 {% endif %}
                             </td>
                             <td>
@@ -93,14 +103,18 @@
                                        class="btn btn-outline-primary" title="Просмотреть">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    {% if user == product.owner or is_moderator %}
                                     <a href="{% url 'catalog:product_edit' product.id %}"
                                        class="btn btn-outline-warning" title="Редактировать">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    {% endif %}
+                                    {% if user == product.owner or is_moderator %}
                                     <a href="{% url 'catalog:product_delete' product.id %}"
                                        class="btn btn-outline-danger" title="Удалить">
                                         <i class="bi bi-trash"></i>
                                     </a>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
