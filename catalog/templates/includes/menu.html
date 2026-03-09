@@ -1,0 +1,134 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 rounded shadow-sm">
+    <div class="container-fluid">
+        <!-- Логотип/название сайта -->
+        <a class="navbar-brand fw-bold text-primary" href="{% url 'catalog:index' %}">
+            <i class="bi bi-shop me-2"></i>Каталог
+        </a>
+
+        <!-- Кнопка для мобильных устройств -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Основное меню -->
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav me-auto">
+                <!-- Главная страница -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'catalog:index' %}">
+                        <i class="bi bi-house-door me-1"></i>Главная
+                    </a>
+                </li>
+
+                <!-- Блог -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'blog:post_list' %}">
+                        <i class="bi bi-journal-text me-1"></i>Блог
+                    </a>
+                </li>
+
+                <!-- Управление продуктами - показывать только авторизованным -->
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'catalog:product_list' %}">
+                        <i class="bi bi-box-seam me-1"></i>Управление продуктами
+                    </a>
+                </li>
+                {% endif %}
+
+                <!-- Контакты -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'catalog:contacts' %}">
+                        <i class="bi bi-telephone me-1"></i>Контакты
+                    </a>
+                </li>
+
+                <!-- Категории товаров (динамически из базы) -->
+                {% for category in categories %}
+                <li class="nav-item">
+                    <a class="nav-link {% if category.id|stringformat:'i' in request.path %}active{% endif %}"
+                       href="{% url 'catalog:category_products_detail' category.id %}">
+                        {{ category.name }}
+                    </a>
+                </li>
+                {% endfor %}
+
+                <!-- Очистка кеша (только для модераторов) -->
+                {% if user.is_authenticated and perms.catalog.can_delete_any_product %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'catalog:clear_cache' %}">
+                        <i class="bi bi-database"></i> Очистить кеш
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <!-- Поиск и пользовательские элементы -->
+            <div class="d-flex">
+                <!-- Форма поиска -->
+                <form class="d-flex me-3" method="get" action="#">
+                    <div class="input-group">
+                        <input type="search" class="form-control" placeholder="Поиск товаров..." aria-label="Поиск">
+                        <button class="btn btn-outline-primary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Кнопки входа/выхода и управления -->
+                <div class="btn-group">
+                    {% if user.is_authenticated %}
+                    <!-- Для авторизованных пользователей -->
+                    <a href="{% url 'users:profile' %}" class="btn btn-outline-primary btn-sm me-2">
+                        <i class="bi bi-person"></i> {{ user.username|truncatechars:10 }}
+                    </a>
+                    <a href="{% url 'catalog:product_create' %}" class="btn btn-success btn-sm me-2">
+                        <i class="bi bi-plus-circle"></i> Новый продукт
+                    </a>
+                    <a href="{% url 'catalog:product_list' %}" class="btn btn-info btn-sm me-2">
+                        <i class="bi bi-list"></i> Все продукты
+                    </a>
+                    <a href="/admin" class="btn btn-outline-secondary btn-sm me-2" target="_blank">
+                        <i class="bi bi-gear"></i> Админка
+                    </a>
+                    <form method="post" action="{% url 'users:logout' %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-box-arrow-right"></i> Выйти
+                        </button>
+                    </form>
+                    {% else %}
+                    <!-- Для анонимных пользователей -->
+                    <a href="{% url 'users:login' %}" class="btn btn-outline-primary btn-sm me-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Войти
+                    </a>
+                    <a href="{% url 'users:register' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus"></i> Регистрация
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Блок для уведомлений/сообщений -->
+{% if messages %}
+<div class="container mb-4">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {% if message.tags == 'success' %}
+        <i class="bi bi-check-circle-fill me-2"></i>
+        {% elif message.tags == 'error' or message.tags == 'danger' %}
+        <i class="bi bi-exclamation-circle-fill me-2"></i>
+        {% elif message.tags == 'warning' %}
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {% elif message.tags == 'info' %}
+        <i class="bi bi-info-circle-fill me-2"></i>
+        {% endif %}
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

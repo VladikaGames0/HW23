@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Очистка кеша{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-database"></i> Управление кешем Redis
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="bi bi-info-circle"></i> Текущее состояние:</h5>
+                        <ul class="mb-0">
+                            <li><strong>Бэкенд:</strong> Redis</li>
+                            <li><strong>Статус:</strong>
+                                {% if cache_stats.error %}
+                                    <span class="text-danger">Ошибка подключения</span>
+                                {% else %}
+                                    <span class="text-success">Активен</span>
+                                {% endif %}
+                            </li>
+                            <li><strong>Таймаут по умолчанию:</strong> 300 сек</li>
+                            <li><strong>Префикс ключей:</strong> catalog:</li>
+                        </ul>
+                    </div>
+
+                    {% if not cache_stats.error %}
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-graph-up"></i> Статистика Redis</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td>Подключений:</td>
+                                            <td><strong>{{ cache_stats.connected_clients }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Использовано памяти:</td>
+                                            <td><strong>{{ cache_stats.used_memory_human }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Всего команд:</td>
+                                            <td><strong>{{ cache_stats.total_commands_processed }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Хиты кеша:</td>
+                                            <td><strong>{{ cache_stats.keyspace_hits }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Промахи кеша:</td>
+                                            <td><strong>{{ cache_stats.keyspace_misses }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Всего ключей:</td>
+                                            <td><strong>{{ cache_stats.total_keys }}</strong></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-key"></i> Примеры ключей</h6>
+                                    <ul class="list-unstyled small">
+                                        {% for key in cache_stats.keys %}
+                                        <li><code>{{ key }}</code></li>
+                                        {% empty %}
+                                        <li>Нет активных ключей</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Внимание!</strong> Очистка кеша может временно замедлить работу сайта,
+                        так как данные будут загружаться заново из базы данных. Рекомендуется выполнять
+                        эту операцию только при необходимости (например, после массовых изменений).
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="bi bi-database"></i> Очистить весь кеш
+                            </button>
+                            <a href="{% url 'catalog:index' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Вернуться на главную
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

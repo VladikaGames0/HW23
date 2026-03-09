@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление продукта{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h2 class="h4 mb-0"><i class="bi bi-exclamation-triangle"></i> Удаление продукта</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h4 class="alert-heading">Внимание!</h4>
+                        <p>Вы собираетесь удалить продукт <strong>"{{ object.name }}"</strong>.</p>
+                        <hr>
+                        <p class="mb-0">
+                            <i class="bi bi-info-circle"></i> Это действие нельзя отменить.
+                            Все данные о продукте будут удалены без возможности восстановления.
+                        </p>
+                    </div>
+
+                    {% if object.image %}
+                    <div class="text-center mb-3">
+                        <img src="{{ object.image.url }}" alt="{{ object.name }}"
+                             class="img-fluid rounded" style="max-height: 200px;">
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h5>Информация о продукте:</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <strong>Категория:</strong> {{ object.category.name|default:"Не указана" }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Цена:</strong> {{ object.price }} ₽
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Количество на складе:</strong> {{ object.stock }} шт.
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Статус:</strong>
+                                {% if object.is_available %}
+                                <span class="badge bg-success">В наличии</span>
+                                {% else %}
+                                <span class="badge bg-danger">Нет в наличии</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'catalog:product_detail' object.id %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Отмена
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Удалить продукт
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

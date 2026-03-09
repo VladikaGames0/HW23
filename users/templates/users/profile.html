@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Профиль пользователя{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">Профиль</h4>
+                </div>
+                <div class="card-body text-center">
+                    {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}"
+                         class="rounded-circle img-fluid mb-3" style="max-width: 200px;">
+                    {% else %}
+                    <div class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 200px; height: 200px; font-size: 5rem;">
+                        {{ user.username|first|upper }}
+                    </div>
+                    {% endif %}
+
+                    <h5>{{ user.get_full_name|default:user.username }}</h5>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">Информация о пользователе</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ user.username }}</td>
+                        </tr>
+
+                        </tr>
+                        <tr>
+
+                        <tr>
+                            <th>Дата регистрации:</th>
+                            <td>{{ user.date_joined|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Последний вход:</th>
+                            <td>{{ user.last_login|date:"d.m.Y H:i"|default:"Никогда" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
