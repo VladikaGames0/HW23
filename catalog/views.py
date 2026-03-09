@@ -4,58 +4,77 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
-from django.db.models import Q, Avg
+from django.db.models import Q
 from django.core.exceptions import PermissionDenied
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django.core.cache import cache
 
 from .models import Category, Product
 from .forms import ProductForm
+from .services import (
+    get_cached_product, get_cached_categories, get_cached_related_products,
+    get_products_by_category, get_category_stats, get_cached_index_products,
+    clear_all_product_caches, get_cache_stats
+)
 
 
 class IndexView(ListView):
-    """Главная страница со списком товаров - ОБЩЕДОСТУПНАЯ"""
+    """Главная страница со списком товаров - с низкоуровневым кешированием"""
     model = Product
     template_name = 'catalog/index.html'
     context_object_name = 'products'
     paginate_by = 9
 
     def get_queryset(self):
-        # Показываем только опубликованные товары
+        # Получаем параметры запроса
         category_id = self.request.GET.get('category')
-        if category_id:
-            return Product.objects.filter(
-                category_id=category_id,
-                publication_status='published'
-            )
-        return Product.objects.filter(publication_status='published')
+        page = self.request.GET.get('page', 1)
+
+        # Используем сервисную функцию с кешированием
+        return get_cached_index_products(category_id, page)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.all()
+
+        # Кеширование категорий через сервисную функцию
+        context['categories'] = get_cached_categories()
+
+        # Добавляем информацию о кеше для отладки
+        if self.request.GET.get('debug') == '1':
+            context['cache_stats'] = get_cache_stats()
+            context['debug'] = True
+
         return context
 
 
 class ProductDetailView(DetailView):
-    """Страница с подробной информацией о товаре - ОБЩЕДОСТУПНАЯ"""
+    """Страница с подробной информацией о товаре - с кешированием"""
     model = Product
     template_name = 'catalog/product_detail.html'
     context_object_name = 'product'
     pk_url_kwarg = 'product_id'
 
-    def get_queryset(self):
-        # Владельцы видят свои товары даже если не опубликованы
-        if self.request.user.is_authenticated:
-            return Product.objects.filter(
-                Q(publication_status='published') | Q(owner=self.request.user)
-            )
-        return Product.objects.filter(publication_status='published')
+    @method_decorator(cache_page(60 * 15))  # Кешировать страницу на 15 минут
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_object(self, queryset=None):
+        # Используем сервисную функцию с кешированием
+        return get_cached_product(
+            self.kwargs['product_id'],
+            user=self.request.user
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.all()
-        context['related_products'] = Product.objects.filter(
-            category=self.object.category,
-            publication_status='published'
-        ).exclude(id=self.object.id)[:4]
+
+        # Кеширование категорий
+        context['categories'] = get_cached_categories()
+
+        # Кеширование похожих товаров
+        context['related_products'] = get_cached_related_products(self.object)
+
         return context
 
 
@@ -67,7 +86,6 @@ class CategoryProductsView(ListView):
 
     def get_queryset(self):
         self.category = get_object_or_404(Category, id=self.kwargs['category_id'])
-        # Показываем только опубликованные товары
         return Product.objects.filter(
             category=self.category,
             publication_status='published'
@@ -76,7 +94,7 @@ class CategoryProductsView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category'] = self.category
-        context['categories'] = Category.objects.all()
+        context['categories'] = get_cached_categories()
 
         products = context['products']
         if products:
@@ -92,6 +110,45 @@ class CategoryProductsView(ListView):
         return context
 
 
+class CategoryProductsDetailView(TemplateView):
+    """Отдельное представление для отображения продуктов категории с кешированием"""
+    template_name = 'catalog/category_products.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        category_id = self.kwargs.get('category_id')
+
+        # Получаем категорию и продукты через сервисную функцию с кешированием
+        category, products = get_products_by_category(
+            category_id,
+            user=self.request.user,
+            published_only=True
+        )
+
+        if not category:
+            from django.http import Http404
+            raise Http404("Категория не найдена")
+
+        context['category'] = category
+        context['products'] = products
+
+        # Получаем статистику с кешированием
+        stats = get_category_stats(category_id)
+        context.update(stats)
+
+        # Все категории для меню (тоже с кешированием)
+        context['categories'] = get_cached_categories()
+        context['title'] = f'Товары в категории: {category.name}'
+
+        # Для отладки
+        if self.request.GET.get('debug') == '1':
+            context['cache_stats'] = get_cache_stats()
+            context['debug'] = True
+
+        return context
+
+
 class ContactsView(TemplateView):
     """Страница контактов - ОБЩЕДОСТУПНАЯ"""
     template_name = 'catalog/contacts.html'
@@ -102,7 +159,7 @@ class ContactsView(TemplateView):
         context['phone'] = '+7 (999) 123-45-67'
         context['email'] = 'info@catalog.ru'
         context['address'] = 'г. Москва, ул. Примерная, д. 10'
-        context['categories'] = Category.objects.all()
+        context['categories'] = get_cached_categories()
         return context
 
 
@@ -113,7 +170,6 @@ class OwnerOrModeratorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         product = self.get_object()
         user = self.request.user
-        # Владелец или модератор (имеет право удалять любой продукт)
         return user == product.owner or user.has_perm('catalog.can_delete_any_product')
 
 
@@ -136,13 +192,11 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Создание нового продукта'
         context['submit_text'] = 'Создать продукт'
-        context['categories'] = Category.objects.all()
+        context['categories'] = get_cached_categories()
         return context
 
     def form_valid(self, form):
-        # Автоматически привязываем продукт к текущему пользователю
         form.instance.owner = self.request.user
-        # Новый продукт по умолчанию создается как черновик
         form.instance.publication_status = 'draft'
         messages.success(self.request, 'Продукт успешно создан! Он отправлен на модерацию.')
         return super().form_valid(form)
@@ -153,7 +207,7 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
 
 
 class ProductUpdateView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin, UpdateView):
-    """Редактирование существующего продукта - ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА ИЛИ МОДЕРАТОРА"""
+    """Редактирование существующего продукта"""
     model = Product
     form_class = ProductForm
     template_name = 'catalog/product_form.html'
@@ -161,7 +215,7 @@ class ProductUpdateView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin, Updat
 
     login_url = reverse_lazy('users:login')
     redirect_field_name = 'next'
-    raise_exception = True  # Показывать 403 вместо редиректа на логин
+    raise_exception = True
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -173,7 +227,7 @@ class ProductUpdateView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin, Updat
         context['title'] = f'Редактирование продукта: {self.object.name}'
         context['submit_text'] = 'Сохранить изменения'
         context['is_update'] = True
-        context['categories'] = Category.objects.all()
+        context['categories'] = get_cached_categories()
         return context
 
     def get_success_url(self):
@@ -186,7 +240,7 @@ class ProductUpdateView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin, Updat
 
 
 class ProductDeleteView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin, DeleteView):
-    """Удаление продукта - ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА ИЛИ МОДЕРАТОРА"""
+    """Удаление продукта"""
     model = Product
     template_name = 'catalog/product_confirm_delete.html'
     pk_url_kwarg = 'product_id'
@@ -199,7 +253,7 @@ class ProductDeleteView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin, Delet
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = f'Удаление продукта: {self.object.name}'
-        context['categories'] = Category.objects.all()
+        context['categories'] = get_cached_categories()
         return context
 
     def delete(self, request, *args, **kwargs):
@@ -208,7 +262,7 @@ class ProductDeleteView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin, Delet
 
 
 class ProductListView(LoginRequiredMixin, ListView):
-    """Список всех продуктов (для администраторов) - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ"""
+    """Список всех продуктов (для администраторов)"""
     model = Product
     template_name = 'catalog/product_list.html'
     context_object_name = 'products'
@@ -221,7 +275,6 @@ class ProductListView(LoginRequiredMixin, ListView):
         search_query = self.request.GET.get('search', '')
         base_queryset = Product.objects.all()
 
-        # Для обычных пользователей показываем только их продукты
         if not self.request.user.has_perm('catalog.can_delete_any_product'):
             base_queryset = base_queryset.filter(owner=self.request.user)
 
@@ -236,6 +289,26 @@ class ProductListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('search', '')
-        context['categories'] = Category.objects.all()
+        context['categories'] = get_cached_categories()
         context['is_moderator'] = self.request.user.has_perm('catalog.can_delete_any_product')
         return context
+
+
+class ClearCacheView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    """Представление для очистки кеша (только для модераторов)"""
+    template_name = 'catalog/clear_cache.html'
+
+    def test_func(self):
+        return self.request.user.has_perm('catalog.can_delete_any_product')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = get_cached_categories()
+        context['cache_stats'] = get_cache_stats()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        # Очищаем весь кеш
+        clear_all_product_caches()
+        messages.success(request, 'Кеш успешно очищен!')
+        return redirect('catalog:index')

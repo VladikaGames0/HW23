@@ -47,11 +47,20 @@
                 {% for category in categories %}
                 <li class="nav-item">
                     <a class="nav-link {% if category.id|stringformat:'i' in request.path %}active{% endif %}"
-                       href="{% url 'catalog:category_products' category.id %}">
+                       href="{% url 'catalog:category_products_detail' category.id %}">
                         {{ category.name }}
                     </a>
                 </li>
                 {% endfor %}
+
+                <!-- Очистка кеша (только для модераторов) -->
+                {% if user.is_authenticated and perms.catalog.can_delete_any_product %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'catalog:clear_cache' %}">
+                        <i class="bi bi-database"></i> Очистить кеш
+                    </a>
+                </li>
+                {% endif %}
             </ul>
 
             <!-- Поиск и пользовательские элементы -->
